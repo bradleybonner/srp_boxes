@@ -13,6 +13,24 @@ const Inventory = () => {
   const [selectedLibraryId, setSelectedLibraryId] = useState(user.library_id);
   const [selectedLibraryName, setSelectedLibraryName] = useState(user.library_name);
 
+  const formatLastUpdated = (dateString) => {
+    if (!dateString) return 'Never updated';
+    
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    
+    return date.toLocaleDateString() + ' at ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   useEffect(() => {
     fetchLibraries();
     fetchInventory(user.library_id);
@@ -138,7 +156,17 @@ const Inventory = () => {
               border: `2px solid ${item.quantity === 0 ? '#ef5350' : item.quantity <= 10 ? '#ff9800' : '#e0e0e0'}`
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                <h4 style={{ margin: 0, fontSize: '20px' }}>{getBoxTypeDisplayName(item.box_type)} Boxes</h4>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '20px' }}>{getBoxTypeDisplayName(item.box_type)} Boxes</h4>
+                  <div style={{ 
+                    fontSize: '12px', 
+                    color: item.updated_at && new Date() - new Date(item.updated_at) < 3600000 ? '#4CAF50' : '#666', 
+                    marginTop: '4px',
+                    fontWeight: item.updated_at && new Date() - new Date(item.updated_at) < 3600000 ? '500' : 'normal'
+                  }}>
+                    Last updated: {formatLastUpdated(item.updated_at)}
+                  </div>
+                </div>
                 <div style={{ fontSize: '32px', fontWeight: 'bold', color: item.quantity === 0 ? '#c62828' : item.quantity <= 10 ? '#ef6c00' : '#2e7d32' }}>
                   {item.quantity}
                 </div>
