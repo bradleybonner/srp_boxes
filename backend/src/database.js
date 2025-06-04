@@ -2,10 +2,10 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const bcrypt = require('bcryptjs');
 
-// Use Railway volume mount path if available, otherwise use local path
-const dbPath = process.env.RAILWAY_VOLUME_MOUNT_PATH 
-  ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, 'srp_tracker.db')
-  : path.join(__dirname, '../srp_tracker.db');
+// Use different paths based on environment
+const dbPath = process.env.NODE_ENV === 'production'
+  ? '/data/srp_tracker.db'  // Docker volume mount
+  : path.join(__dirname, '../srp_tracker.db');  // Local development
 
 console.log('Database path:', dbPath);
 
