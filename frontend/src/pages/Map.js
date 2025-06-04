@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import { MapContainer, TileLayer, Marker, Popup, CircleMarker } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { getBoxTypeDisplayName } from '../utils/boxTypes';
 
 // Fix for default markers in React Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -93,7 +94,7 @@ const Map = () => {
                 className={selectedBoxType === 'EL' ? 'btn' : 'btn btn-secondary'}
                 onClick={() => setSelectedBoxType('EL')}
               >
-                EL
+                Early Learning
               </button>
               <button 
                 className={selectedBoxType === 'Kids' ? 'btn' : 'btn btn-secondary'}
@@ -176,7 +177,7 @@ const Map = () => {
                     <table style={{ width: '100%', marginTop: '5px' }}>
                       <tbody>
                         <tr>
-                          <td>EL:</td>
+                          <td>Early Learning:</td>
                           <td style={{ textAlign: 'right', fontWeight: library.inventory.EL <= 10 ? 'bold' : 'normal', color: library.inventory.EL === 0 ? '#d32f2f' : library.inventory.EL <= 10 ? '#f57c00' : 'inherit' }}>
                             {library.inventory.EL || 0}
                           </td>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
+import { getBoxTypeDisplayName } from '../utils/boxTypes';
 
 const Inventory = () => {
   const { user } = useAuth();
@@ -137,7 +138,7 @@ const Inventory = () => {
               border: `2px solid ${item.quantity === 0 ? '#ef5350' : item.quantity <= 10 ? '#ff9800' : '#e0e0e0'}`
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                <h4 style={{ margin: 0, fontSize: '20px' }}>{item.box_type} Boxes</h4>
+                <h4 style={{ margin: 0, fontSize: '20px' }}>{getBoxTypeDisplayName(item.box_type)} Boxes</h4>
                 <div style={{ fontSize: '32px', fontWeight: 'bold', color: item.quantity === 0 ? '#c62828' : item.quantity <= 10 ? '#ef6c00' : '#2e7d32' }}>
                   {item.quantity}
                 </div>

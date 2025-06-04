@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useAuth } from '../context/AuthContext';
+import { getBoxTypeDisplayName } from '../utils/boxTypes';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -50,12 +51,12 @@ const Dashboard = () => {
         if (item.quantity === 0) {
           alerts.push({
             type: 'danger',
-            message: `${library.library_name} is OUT of ${item.box_type} boxes!`
+            message: `${library.library_name} is OUT of ${getBoxTypeDisplayName(item.box_type)} boxes!`
           });
         } else if (item.quantity <= 10) {
           alerts.push({
             type: 'warning',
-            message: `${library.library_name} is running LOW on ${item.box_type} boxes (${item.quantity} remaining)`
+            message: `${library.library_name} is running LOW on ${getBoxTypeDisplayName(item.box_type)} boxes (${item.quantity} remaining)`
           });
         }
       });
@@ -108,7 +109,7 @@ const Dashboard = () => {
                   marginBottom: '5px',
                   color: '#666'
                 }}>
-                  {item.box_type}
+                  {getBoxTypeDisplayName(item.box_type)}
                 </div>
                 <div style={{ 
                   fontSize: '36px', 

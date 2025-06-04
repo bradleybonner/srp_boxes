@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { getBoxTypeDisplayName, BOX_TYPE_COLORS } from '../utils/boxTypes';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -75,10 +76,10 @@ const Charts = () => {
 
     const datasets = Object.entries(grouped).map(([key, data]) => {
       const [library, boxType] = key.split('-');
-      const color = boxType === 'EL' ? '#4CAF50' : boxType === 'Kids' ? '#2196F3' : '#FF9800';
+      const color = BOX_TYPE_COLORS[boxType] || '#999999';
       
       return {
-        label: `${library} - ${boxType}`,
+        label: `${library} - ${getBoxTypeDisplayName(boxType)}`,
         data: Object.entries(data).map(([date, quantity]) => ({ x: date, y: quantity })),
         borderColor: color,
         backgroundColor: color + '20',
@@ -111,7 +112,7 @@ const Charts = () => {
       labels: Object.keys(grouped),
       datasets: [
         {
-          label: 'EL',
+          label: 'Early Learning',
           data: Object.values(grouped).map(lib => lib.EL || 0),
           backgroundColor: '#4CAF50'
         },
