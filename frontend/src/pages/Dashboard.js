@@ -185,7 +185,7 @@ const Dashboard = () => {
                     fontWeight: item.quantity <= 10 ? 'bold' : 'normal',
                     color: item.quantity === 0 ? '#c62828' : item.quantity <= 10 ? '#ef6c00' : 'inherit'
                   }}>
-                    {item.box_type}
+                    {getBoxTypeDisplayName(item.box_type)}
                   </div>
                   <div className="box-type-count" style={{
                     fontSize: '28px',
