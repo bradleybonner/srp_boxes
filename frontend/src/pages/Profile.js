@@ -28,8 +28,8 @@ const Profile = () => {
     setLoading(true);
     try {
       await axios.put('/api/users/change-password', {
-        currentPassword: passwords.currentPassword,
-        newPassword: passwords.newPassword
+        current_password: passwords.currentPassword,
+        new_password: passwords.newPassword
       });
       
       toast.success('Password changed successfully');

@@ -57,16 +57,22 @@ router.post('/', [
 // Change password
 router.put('/change-password', [
   authenticateToken,
-  body('current_password').notEmpty(),
-  body('new_password').isLength({ min: 6 })
+  body('current_password').notEmpty().withMessage('Current password is required'),
+  body('new_password').isLength({ min: 6 }).withMessage('New password must be at least 6 characters')
 ], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
+    console.log('Validation errors:', errors.array());
+    return res.status(400).json({ 
+      error: errors.array()[0].msg,
+      errors: errors.array() 
+    });
   }
 
   const { current_password, new_password } = req.body;
   const userId = req.user.id;
+  
+  console.log('Password change attempt for user:', userId);
 
   try {
     const user = await db.one(
