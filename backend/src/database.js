@@ -2,7 +2,14 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const bcrypt = require('bcryptjs');
 
-const db = new sqlite3.Database(path.join(__dirname, '../srp_tracker.db'));
+// Use Railway volume mount path if available, otherwise use local path
+const dbPath = process.env.RAILWAY_VOLUME_MOUNT_PATH 
+  ? path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, 'srp_tracker.db')
+  : path.join(__dirname, '../srp_tracker.db');
+
+console.log('Database path:', dbPath);
+
+const db = new sqlite3.Database(dbPath);
 
 const initDatabase = () => {
   db.serialize(() => {
