@@ -10,8 +10,33 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [libraryGroups, setLibraryGroups] = useState({});
 
+  const formatLastUpdated = (dateString) => {
+    if (!dateString) return 'Never updated';
+    
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+    
+    return date.toLocaleDateString() + ' at ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
   useEffect(() => {
     fetchInventory();
+    
+    // Refresh data every 30 seconds to show latest updates
+    const interval = setInterval(() => {
+      fetchInventory();
+    }, 30000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const fetchInventory = async () => {
@@ -128,7 +153,15 @@ const Dashboard = () => {
             ))}
           </div>
           <div style={{ fontSize: '12px', color: '#666', textAlign: 'right' }}>
-            Last updated: {new Date(userLibrary.items[0]?.updated_at).toLocaleString()}
+            Last updated: {(() => {
+              const mostRecent = userLibrary.items.reduce((latest, item) => {
+                if (!item.updated_at) return latest;
+                const itemDate = new Date(item.updated_at);
+                return itemDate > latest ? itemDate : latest;
+              }, new Date(0));
+              
+              return mostRecent.getTime() === 0 ? 'Never' : formatLastUpdated(mostRecent);
+            })()}
           </div>
         </div>
       )}
@@ -198,7 +231,15 @@ const Dashboard = () => {
               ))}
             </div>
             <div style={{ fontSize: '12px', color: '#666', marginTop: '10px' }}>
-              Last updated: {new Date(library.items[0]?.updated_at).toLocaleString()}
+              Last updated: {(() => {
+                const mostRecent = library.items.reduce((latest, item) => {
+                  if (!item.updated_at) return latest;
+                  const itemDate = new Date(item.updated_at);
+                  return itemDate > latest ? itemDate : latest;
+                }, new Date(0));
+                
+                return mostRecent.getTime() === 0 ? 'Never' : formatLastUpdated(mostRecent);
+              })()}
             </div>
           </div>
         ))}
