@@ -20,7 +20,8 @@ const Navbar = () => {
           <Link to="/inventory">My Inventory</Link>
           <Link to="/charts">Charts</Link>
           <Link to="/map">Map</Link>
-          {user?.is_admin === 1 && <Link to="/admin">Admin</Link>}
+          {user?.is_admin && <Link to="/admin">Admin</Link>}
+          <Link to="/profile">Profile</Link>
           <span>Welcome, {user?.username} ({user?.library_name})</span>
           <button className="btn btn-secondary" onClick={handleLogout}>
             Logout

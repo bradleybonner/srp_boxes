@@ -11,6 +11,7 @@ import Inventory from './pages/Inventory';
 import Charts from './pages/Charts';
 import Admin from './pages/Admin';
 import Map from './pages/Map';
+import Profile from './pages/Profile';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
             <Route path="/inventory" element={<PrivateRoute><><Navbar /><Inventory /></></PrivateRoute>} />
             <Route path="/charts" element={<PrivateRoute><><Navbar /><Charts /></></PrivateRoute>} />
             <Route path="/map" element={<PrivateRoute><><Navbar /><Map /></></PrivateRoute>} />
+            <Route path="/profile" element={<PrivateRoute><><Navbar /><Profile /></></PrivateRoute>} />
             <Route path="/admin" element={<PrivateRoute adminOnly><><Navbar /><Admin /></></PrivateRoute>} />
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
