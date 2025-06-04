@@ -2,10 +2,15 @@ const pgp = require('pg-promise')();
 const bcrypt = require('bcryptjs');
 
 // Database connection
+console.log('Environment:', process.env.NODE_ENV);
+console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
+
 const connection = {
   connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/srp_tracker',
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 };
+
+console.log('Connecting to database:', connection.connectionString.replace(/:[^:@]+@/, ':****@'));
 
 const db = pgp(connection);
 
