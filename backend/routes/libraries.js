@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
-const db = require('../src/database-pg');
+const { db } = require('../src/database-pg');
 const { authenticateToken, isAdmin } = require('../middleware/auth');
 
 // Get all libraries
