@@ -29,7 +29,7 @@ ChartJS.register(
 const Charts = () => {
   const [history, setHistory] = useState([]);
   const [currentInventory, setCurrentInventory] = useState([]);
-  const [selectedLibrary, setSelectedLibrary] = useState('all');
+  const [selectedLibraries, setSelectedLibraries] = useState(['all']);
   const [libraries, setLibraries] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -56,8 +56,9 @@ const Charts = () => {
   };
 
   const getFilteredHistory = () => {
-    if (selectedLibrary === 'all') return history;
-    return history.filter(h => h.library_id === parseInt(selectedLibrary));
+    if (selectedLibraries.length === 0) return [];
+    if (selectedLibraries.includes('all')) return history;
+    return history.filter(h => selectedLibraries.includes(h.library_id.toString()));
   };
 
   const prepareTimeSeriesData = () => {
@@ -96,9 +97,11 @@ const Charts = () => {
   };
 
   const prepareBarChartData = () => {
-    const filteredInventory = selectedLibrary === 'all' 
+    const filteredInventory = selectedLibraries.length === 0 
+      ? []
+      : selectedLibraries.includes('all') 
       ? currentInventory 
-      : currentInventory.filter(i => i.library_id === parseInt(selectedLibrary));
+      : currentInventory.filter(i => selectedLibraries.includes(i.library_id.toString()));
 
     const grouped = {};
     filteredInventory.forEach(item => {
@@ -143,16 +146,60 @@ const Charts = () => {
       
       <div className="card">
         <div className="form-group">
-          <label>Filter by Library</label>
-          <select 
-            value={selectedLibrary} 
-            onChange={(e) => setSelectedLibrary(e.target.value)}
-          >
-            <option value="all">All Libraries</option>
-            {libraries.map(lib => (
-              <option key={lib.id} value={lib.id}>{lib.name}</option>
-            ))}
-          </select>
+          <label>Filter by Libraries</label>
+          <div style={{ marginTop: '10px' }}>
+            <label style={{ display: 'block', marginBottom: '10px' }}>
+              <input
+                type="checkbox"
+                checked={selectedLibraries.includes('all')}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    setSelectedLibraries(['all']);
+                  } else {
+                    setSelectedLibraries([]);
+                  }
+                }}
+              />
+              {' '}All Libraries
+            </label>
+            <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #ddd', padding: '10px', borderRadius: '4px' }}>
+              {libraries.map(lib => (
+                <label key={lib.id} style={{ display: 'block', marginBottom: '5px' }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedLibraries.includes('all') || selectedLibraries.includes(lib.id.toString())}
+                    disabled={selectedLibraries.includes('all')}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedLibraries([...selectedLibraries, lib.id.toString()]);
+                      } else {
+                        setSelectedLibraries(selectedLibraries.filter(id => id !== lib.id.toString()));
+                      }
+                    }}
+                  />
+                  {' '}{lib.name}
+                </label>
+              ))}
+            </div>
+            <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: '14px', color: '#666' }}>
+                {selectedLibraries.includes('all') 
+                  ? 'All libraries selected' 
+                  : selectedLibraries.length === 0 
+                  ? 'No libraries selected'
+                  : `${selectedLibraries.length} libraries selected`}
+              </div>
+              {!selectedLibraries.includes('all') && (
+                <button 
+                  className="btn btn-small"
+                  onClick={() => setSelectedLibraries(['all'])}
+                  style={{ padding: '4px 8px', fontSize: '12px' }}
+                >
+                  Select All
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </div>
 
