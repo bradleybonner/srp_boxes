@@ -33,7 +33,15 @@ railway init
 railway up
 ```
 
-### 3. Configure Environment Variables
+### 3. Set up PostgreSQL Database
+
+Railway provides managed PostgreSQL databases:
+
+1. In your Railway project dashboard
+2. Click "New" → "Database" → "Add PostgreSQL"
+3. Railway will automatically create the database and set the DATABASE_URL
+
+### 4. Configure Environment Variables
 
 In your Railway project dashboard:
 1. Go to your project
@@ -46,20 +54,9 @@ NODE_ENV=production
 JWT_SECRET=your-very-secure-secret-key-here
 ```
 
-**Important**: Generate a secure JWT_SECRET using:
-```bash
-openssl rand -base64 32
-```
-
-### 4. Set up Database Persistence
-
-Since this app uses SQLite, you need to configure a persistent volume:
-
-1. In Railway dashboard, go to your service
-2. Click "Settings" → "Volumes"
-3. Click "Mount Volume"
-4. Set mount path to: `/app/backend`
-5. This ensures your SQLite database persists between deployments
+**Important**: 
+- Generate a secure JWT_SECRET using: `openssl rand -base64 32`
+- Railway automatically sets DATABASE_URL when you add PostgreSQL
 
 ### 5. Custom Domain (Optional)
 
@@ -84,10 +81,10 @@ Since this app uses SQLite, you need to configure a persistent volume:
 
 ## Troubleshooting
 
-### Database Issues
-If data doesn't persist:
-- Ensure volume is mounted at `/app/backend`
-- Check that `srp_tracker.db` is in `.gitignore`
+### Database Connection Issues
+- Ensure PostgreSQL service is running in Railway
+- Check that DATABASE_URL is properly set in environment variables
+- Verify database credentials are correct
 
 ### Build Failures
 - Check build logs in Railway dashboard
@@ -99,9 +96,15 @@ If data doesn't persist:
 - Ensure CORS is properly configured
 - Check that all API routes start with `/api/`
 
-## Future Improvements
+### Database Migration
+- The app automatically creates tables on first run
+- Admin user is seeded automatically (username: admin, password: admin123)
+- Check logs for any database initialization errors
 
-Consider migrating to PostgreSQL for better production support:
-1. Railway provides PostgreSQL databases
-2. Better performance and reliability
-3. Easier backups and scaling
+## Benefits of PostgreSQL
+
+This app now uses PostgreSQL which provides:
+1. Better performance and reliability than SQLite
+2. Automatic backups on Railway
+3. Easy scaling and connection pooling
+4. Full SQL feature support

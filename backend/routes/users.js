@@ -2,24 +2,23 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const { body, validationResult } = require('express-validator');
-const { db } = require('../src/database');
+const { db } = require('../src/database-pg');
 const { authenticateToken, isAdmin } = require('../middleware/auth');
 
 // Get all users (admin only)
-router.get('/', authenticateToken, isAdmin, (req, res) => {
-  db.all(
-    `SELECT u.id, u.username, u.library_id, u.is_admin, u.created_at, l.name as library_name
-     FROM users u
-     JOIN libraries l ON u.library_id = l.id
-     ORDER BY u.username`,
-    [],
-    (err, rows) => {
-      if (err) {
-        return res.status(500).json({ error: 'Database error' });
-      }
-      res.json(rows);
-    }
-  );
+router.get('/', authenticateToken, isAdmin, async (req, res) => {
+  try {
+    const rows = await db.any(
+      `SELECT u.id, u.username, u.library_id, u.is_admin, u.created_at, l.name as library_name
+       FROM users u
+       JOIN libraries l ON u.library_id = l.id
+       ORDER BY u.username`
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error('Database error:', err);
+    return res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // Create new user (admin only)
@@ -39,25 +38,20 @@ router.post('/', [
   const { username, password, library_id, is_admin = false } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  db.run(
-    'INSERT INTO users (username, password, library_id, is_admin) VALUES (?, ?, ?, ?)',
-    [username, hashedPassword, library_id, is_admin ? 1 : 0],
-    function(err) {
-      if (err) {
-        if (err.message.includes('UNIQUE')) {
-          return res.status(400).json({ error: 'Username already exists' });
-        }
-        return res.status(500).json({ error: 'Database error' });
-      }
+  try {
+    const result = await db.one(
+      'INSERT INTO users (username, password, library_id, is_admin) VALUES ($1, $2, $3, $4) RETURNING id, username, library_id, is_admin',
+      [username, hashedPassword, library_id, is_admin]
+    );
 
-      res.status(201).json({ 
-        id: this.lastID, 
-        username, 
-        library_id, 
-        is_admin 
-      });
+    res.status(201).json(result);
+  } catch (err) {
+    console.error('Database error:', err);
+    if (err.code === '23505') { // PostgreSQL unique violation error code
+      return res.status(400).json({ error: 'Username already exists' });
     }
-  );
+    return res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // Change password
@@ -74,33 +68,29 @@ router.put('/change-password', [
   const { current_password, new_password } = req.body;
   const userId = req.user.id;
 
-  db.get(
-    'SELECT password FROM users WHERE id = ?',
-    [userId],
-    async (err, user) => {
-      if (err) {
-        return res.status(500).json({ error: 'Database error' });
-      }
+  try {
+    const user = await db.one(
+      'SELECT password FROM users WHERE id = $1',
+      [userId]
+    );
 
-      const validPassword = await bcrypt.compare(current_password, user.password);
-      if (!validPassword) {
-        return res.status(401).json({ error: 'Current password is incorrect' });
-      }
-
-      const hashedNewPassword = await bcrypt.hash(new_password, 10);
-      
-      db.run(
-        'UPDATE users SET password = ? WHERE id = ?',
-        [hashedNewPassword, userId],
-        (updateErr) => {
-          if (updateErr) {
-            return res.status(500).json({ error: 'Failed to update password' });
-          }
-          res.json({ message: 'Password changed successfully' });
-        }
-      );
+    const validPassword = await bcrypt.compare(current_password, user.password);
+    if (!validPassword) {
+      return res.status(401).json({ error: 'Current password is incorrect' });
     }
-  );
+
+    const hashedNewPassword = await bcrypt.hash(new_password, 10);
+    
+    await db.none(
+      'UPDATE users SET password = $1 WHERE id = $2',
+      [hashedNewPassword, userId]
+    );
+
+    res.json({ message: 'Password changed successfully' });
+  } catch (err) {
+    console.error('Database error:', err);
+    return res.status(500).json({ error: 'Database error' });
+  }
 });
 
 module.exports = router;

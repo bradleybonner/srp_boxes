@@ -38,8 +38,7 @@ COPY --from=builder --chown=nodejs:nodejs /app/backend ./backend
 COPY --from=builder --chown=nodejs:nodejs /app/frontend/build ./frontend/build
 COPY --from=builder --chown=nodejs:nodejs /app/package*.json ./
 
-# Create data directory for SQLite with correct permissions
-RUN mkdir -p /data && chown nodejs:nodejs /data
+# No local data directory needed for PostgreSQL
 
 # Set environment variables
 ENV NODE_ENV=production

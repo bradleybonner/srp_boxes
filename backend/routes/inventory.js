@@ -1,46 +1,45 @@
 const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
-const { db } = require('../src/database');
+const db = require('../src/database-pg');
 const { authenticateToken } = require('../middleware/auth');
 
 // Get all inventory counts
-router.get('/', authenticateToken, (req, res) => {
-  db.all(
-    `SELECT 
-      bi.*, 
-      l.name as library_name,
-      l.latitude,
-      l.longitude,
-      l.address,
-      bi.updated_at
-     FROM box_inventory bi
-     JOIN libraries l ON bi.library_id = l.id
-     ORDER BY l.name, bi.box_type`,
-    [],
-    (err, rows) => {
-      if (err) {
-        return res.status(500).json({ error: 'Database error' });
-      }
-      res.json(rows);
-    }
-  );
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    const rows = await db.manyOrNone(
+      `SELECT 
+        bi.*, 
+        l.name as library_name,
+        l.latitude,
+        l.longitude,
+        l.address,
+        bi.updated_at
+       FROM box_inventory bi
+       JOIN libraries l ON bi.library_id = l.id
+       ORDER BY l.name, bi.box_type`
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error('Database error:', err);
+    return res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // Get inventory for a specific library
-router.get('/library/:libraryId', authenticateToken, (req, res) => {
+router.get('/library/:libraryId', authenticateToken, async (req, res) => {
   const { libraryId } = req.params;
   
-  db.all(
-    `SELECT * FROM box_inventory WHERE library_id = ? ORDER BY box_type`,
-    [libraryId],
-    (err, rows) => {
-      if (err) {
-        return res.status(500).json({ error: 'Database error' });
-      }
-      res.json(rows);
-    }
-  );
+  try {
+    const rows = await db.manyOrNone(
+      `SELECT * FROM box_inventory WHERE library_id = $1 ORDER BY box_type`,
+      [libraryId]
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error('Database error:', err);
+    return res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // Update inventory count
@@ -49,7 +48,7 @@ router.put('/update', [
   body('library_id').isInt(),
   body('box_type').isIn(['EL', 'Kids', 'Teens']),
   body('quantity').isInt({ min: 0 })
-], (req, res) => {
+], async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
@@ -67,34 +66,35 @@ router.put('/update', [
 
   console.log(`Updating inventory: User ${req.user.username} (library_id: ${req.user.library_id}) updating library_id: ${targetLibraryId}, box_type: ${box_type}, quantity: ${quantity}`);
 
-  db.run(
-    `INSERT OR REPLACE INTO box_inventory (library_id, box_type, quantity, updated_at)
-     VALUES (?, ?, ?, CURRENT_TIMESTAMP)`,
-    [targetLibraryId, box_type, quantity],
-    function(err) {
-      if (err) {
-        return res.status(500).json({ error: 'Database error' });
-      }
-
-      // Log the change in history
-      db.run(
-        `INSERT INTO inventory_history (library_id, box_type, quantity, changed_by)
-         VALUES (?, ?, ?, ?)`,
-        [library_id, box_type, quantity, req.user.id],
-        (histErr) => {
-          if (histErr) {
-            console.error('Failed to log history:', histErr);
-          }
-        }
+  try {
+    // Use transaction for both operations
+    await db.tx(async t => {
+      // Upsert inventory
+      await t.none(
+        `INSERT INTO box_inventory (library_id, box_type, quantity, updated_at)
+         VALUES ($1, $2, $3, CURRENT_TIMESTAMP)
+         ON CONFLICT (library_id, box_type) 
+         DO UPDATE SET quantity = $3, updated_at = CURRENT_TIMESTAMP`,
+        [targetLibraryId, box_type, quantity]
       );
 
-      res.json({ message: 'Inventory updated successfully' });
-    }
-  );
+      // Log the change in history
+      await t.none(
+        `INSERT INTO inventory_history (library_id, box_type, quantity, changed_by)
+         VALUES ($1, $2, $3, $4)`,
+        [library_id, box_type, quantity, req.user.id]
+      );
+    });
+
+    res.json({ message: 'Inventory updated successfully' });
+  } catch (err) {
+    console.error('Database error:', err);
+    return res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // Get inventory history
-router.get('/history/:libraryId?', authenticateToken, (req, res) => {
+router.get('/history/:libraryId?', authenticateToken, async (req, res) => {
   const { libraryId } = req.params;
   let query = `
     SELECT 
@@ -108,65 +108,65 @@ router.get('/history/:libraryId?', authenticateToken, (req, res) => {
   
   const params = [];
   if (libraryId) {
-    query += ' WHERE ih.library_id = ?';
+    query += ' WHERE ih.library_id = $1';
     params.push(libraryId);
   }
   
   query += ' ORDER BY ih.change_date DESC LIMIT 100';
   
-  db.all(query, params, (err, rows) => {
-    if (err) {
-      return res.status(500).json({ error: 'Database error' });
-    }
+  try {
+    const rows = await db.manyOrNone(query, params);
     res.json(rows);
-  });
+  } catch (err) {
+    console.error('Database error:', err);
+    return res.status(500).json({ error: 'Database error' });
+  }
 });
 
 // Get inventory with locations for map
-router.get('/map', authenticateToken, (req, res) => {
-  db.all(
-    `SELECT 
-      l.id as library_id,
-      l.name as library_name,
-      l.latitude,
-      l.longitude,
-      l.address,
-      GROUP_CONCAT(bi.box_type || ':' || bi.quantity) as inventory,
-      SUM(bi.quantity) as total_boxes
-     FROM libraries l
-     LEFT JOIN box_inventory bi ON l.id = bi.library_id
-     WHERE l.latitude IS NOT NULL AND l.longitude IS NOT NULL
-     GROUP BY l.id`,
-    [],
-    (err, rows) => {
-      if (err) {
-        return res.status(500).json({ error: 'Database error' });
+router.get('/map', authenticateToken, async (req, res) => {
+  try {
+    const rows = await db.manyOrNone(
+      `SELECT 
+        l.id as library_id,
+        l.name as library_name,
+        l.latitude,
+        l.longitude,
+        l.address,
+        STRING_AGG(bi.box_type || ':' || bi.quantity, ',') as inventory,
+        SUM(bi.quantity) as total_boxes
+       FROM libraries l
+       LEFT JOIN box_inventory bi ON l.id = bi.library_id
+       WHERE l.latitude IS NOT NULL AND l.longitude IS NOT NULL
+       GROUP BY l.id, l.name, l.latitude, l.longitude, l.address`
+    );
+    
+    // Parse inventory data
+    const mapData = rows.map(row => {
+      const inventory = {};
+      if (row.inventory) {
+        row.inventory.split(',').forEach(item => {
+          const [type, quantity] = item.split(':');
+          inventory[type] = parseInt(quantity);
+        });
       }
       
-      // Parse inventory data
-      const mapData = rows.map(row => {
-        const inventory = {};
-        if (row.inventory) {
-          row.inventory.split(',').forEach(item => {
-            const [type, quantity] = item.split(':');
-            inventory[type] = parseInt(quantity);
-          });
-        }
-        
-        return {
-          library_id: row.library_id,
-          library_name: row.library_name,
-          latitude: row.latitude,
-          longitude: row.longitude,
-          address: row.address,
-          inventory,
-          total_boxes: row.total_boxes || 0
-        };
-      });
-      
-      res.json(mapData);
-    }
-  );
+      return {
+        library_id: row.library_id,
+        library_name: row.library_name,
+        latitude: row.latitude,
+        longitude: row.longitude,
+        address: row.address,
+        inventory,
+        total_boxes: parseInt(row.total_boxes) || 0
+      };
+    });
+    
+    res.json(mapData);
+  } catch (err) {
+    console.error('Database error:', err);
+    return res.status(500).json({ error: 'Database error' });
+  }
 });
 
 module.exports = router;

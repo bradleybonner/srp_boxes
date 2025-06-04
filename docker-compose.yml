@@ -1,6 +1,18 @@
 version: '3.8'
 
 services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: srp_tracker
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
   app:
     build: .
     ports:
@@ -8,6 +20,10 @@ services:
     environment:
       - NODE_ENV=production
       - JWT_SECRET=your-local-development-secret
-    volumes:
-      - ./data:/data
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/srp_tracker
+    depends_on:
+      - postgres
     restart: unless-stopped
+
+volumes:
+  postgres_data:

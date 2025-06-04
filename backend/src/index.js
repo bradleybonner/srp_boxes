@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const { initDatabase, seedAdmin } = require('./database');
+const { initDatabase, seedAdmin } = require('./database-pg');
 
 // Import routes
 const authRoutes = require('../routes/auth');
@@ -45,17 +45,18 @@ app.use((err, req, res, next) => {
 });
 
 // Initialize database and start server
-initDatabase();
-
-// Seed admin user after a short delay to ensure DB is ready
-setTimeout(async () => {
+const startServer = async () => {
   try {
+    await initDatabase();
     await seedAdmin();
-    console.log('Admin user seeded (username: admin, password: admin123)');
+    console.log('Database initialized and admin user seeded');
   } catch (err) {
-    console.error('Error seeding admin:', err);
+    console.error('Error initializing database:', err);
+    process.exit(1);
   }
-}, 1000);
+};
+
+startServer();
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
