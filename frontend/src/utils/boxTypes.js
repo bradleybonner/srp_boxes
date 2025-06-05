@@ -1,13 +1,23 @@
 // Box type display names and utilities
 
-export const getBoxTypeDisplayName = (boxType) => {
+export const getBoxTypeDisplayName = (boxType, useShort = false) => {
   const displayNames = {
-    'EL': 'Early Learning',
+    'EL': useShort ? 'Early Learn.' : 'Early Learning',
     'Kids': 'Kids',
     'Teens': 'Teens'
   };
   
   return displayNames[boxType] || boxType;
+};
+
+export const getBoxTypeShortName = (boxType) => {
+  const shortNames = {
+    'EL': 'EL',
+    'Kids': 'Kids',
+    'Teens': 'Teens'
+  };
+  
+  return shortNames[boxType] || boxType;
 };
 
 export const BOX_TYPE_COLORS = {

@@ -113,8 +113,8 @@ const Dashboard = () => {
           </h3>
           <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
-            gap: '20px',
+            gridTemplateColumns: 'repeat(3, 1fr)', 
+            gap: '15px',
             marginBottom: '10px'
           }}>
             {userLibrary.items.map(item => (
@@ -122,24 +122,29 @@ const Dashboard = () => {
                 key={item.id}
                 style={{
                   textAlign: 'center',
-                  padding: '15px',
+                  padding: '20px',
                   backgroundColor: item.quantity === 0 ? '#ffebee' : item.quantity <= 10 ? '#fff3e0' : 'white',
                   borderRadius: '8px',
-                  border: `2px solid ${item.quantity === 0 ? '#ef5350' : item.quantity <= 10 ? '#ff9800' : '#4caf50'}`
+                  border: `2px solid ${item.quantity === 0 ? '#ef5350' : item.quantity <= 10 ? '#ff9800' : '#4caf50'}`,
+                  minHeight: '120px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between'
                 }}
               >
                 <div style={{ 
-                  fontSize: '14px', 
+                  fontSize: '16px', 
                   fontWeight: '500',
-                  marginBottom: '5px',
-                  color: '#666'
+                  color: item.quantity === 0 ? '#c62828' : item.quantity <= 10 ? '#ef6c00' : '#666',
+                  lineHeight: '1.2'
                 }}>
-                  {getBoxTypeDisplayName(item.box_type)}
+                  {getBoxTypeDisplayName(item.box_type, true)}
                 </div>
                 <div style={{ 
-                  fontSize: '36px', 
+                  fontSize: '42px', 
                   fontWeight: 'bold',
-                  color: item.quantity === 0 ? '#c62828' : item.quantity <= 10 ? '#ef6c00' : '#2e7d32'
+                  color: item.quantity === 0 ? '#c62828' : item.quantity <= 10 ? '#ef6c00' : '#2e7d32',
+                  lineHeight: '1'
                 }}>
                   {item.quantity}
                 </div>
@@ -172,16 +177,26 @@ const Dashboard = () => {
           .map(([libraryId, library]) => (
           <div key={libraryId} className="inventory-card">
             <h3>{library.library_name}</h3>
-            <div className="box-type-grid">
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(3, 1fr)', 
+              gap: '10px',
+              marginTop: '15px'
+            }}>
               {library.items.map(item => (
                 <div 
                   key={item.id} 
-                  className={`box-type-item ${getStatusClass(item.quantity)}`}
                   style={{
                     backgroundColor: item.quantity === 0 ? '#ffebee' : item.quantity <= 10 ? '#fff3e0' : '#f5f5f5',
                     border: `2px solid ${item.quantity === 0 ? '#ef5350' : item.quantity <= 10 ? '#ff9800' : '#e0e0e0'}`,
+                    borderRadius: '8px',
+                    padding: '15px',
                     position: 'relative',
-                    overflow: 'hidden'
+                    textAlign: 'center',
+                    minHeight: '100px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between'
                   }}
                 >
                   {item.quantity === 0 && (
@@ -214,16 +229,20 @@ const Dashboard = () => {
                       LOW
                     </div>
                   )}
-                  <div className="box-type-label" style={{ 
-                    fontWeight: item.quantity <= 10 ? 'bold' : 'normal',
-                    color: item.quantity === 0 ? '#c62828' : item.quantity <= 10 ? '#ef6c00' : 'inherit'
+                  <div style={{ 
+                    fontSize: '14px',
+                    fontWeight: item.quantity <= 10 ? '600' : '500',
+                    color: item.quantity === 0 ? '#c62828' : item.quantity <= 10 ? '#ef6c00' : '#666',
+                    lineHeight: '1.2',
+                    marginBottom: '8px'
                   }}>
                     {getBoxTypeDisplayName(item.box_type)}
                   </div>
-                  <div className="box-type-count" style={{
-                    fontSize: '28px',
+                  <div style={{
+                    fontSize: '36px',
                     fontWeight: 'bold',
-                    color: item.quantity === 0 ? '#c62828' : item.quantity <= 10 ? '#ef6c00' : '#2e7d32'
+                    color: item.quantity === 0 ? '#c62828' : item.quantity <= 10 ? '#ef6c00' : '#2e7d32',
+                    lineHeight: '1'
                   }}>
                     {item.quantity}
                   </div>
